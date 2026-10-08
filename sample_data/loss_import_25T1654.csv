@@ -1,0 +1,8 @@
+parameter_code,stage,tap_position,phase,value
+NLL_W,BT,,,908
+I_NL_A,BT,,,1.689
+I_NL_PCT,BT,,,0.51
+TOTAL_LOSS_100,BT,,,2486
+LLC_W75,BT,,,1578
+R_HV_OHM,BT,,,0.1120
+R_LV_OHM,BT,,,0.0045

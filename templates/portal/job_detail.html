@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+{% load core_extras %}
+
+{% block title %}{{ job.test_series_no }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'portal:dashboard' %}" class="text-decoration-none">
+        ← Back to Dashboard
+    </a>
+</div>
+
+<div class="d-flex justify-content-between align-items-start">
+    <div>
+        <h2 class="mb-1">{{ job.test_series_no }}</h2>
+        <div class="text-muted">
+            {{ job.customer.legal_name }}
+        </div>
+    </div>
+
+    <div class="text-end">
+        <span class="badge bg-primary status-badge">
+            {{ job.get_status_display }}
+        </span>
+
+        {% if job.is_locked %}
+            <div class="small text-danger mt-1">
+                🔒 Locked
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<hr>
+
+<!-- Job meta -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                Job Details
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th style="width: 220px;">File No</th>
+                        <td>{{ job.file_no|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Request Type</th>
+                        <td>{{ job.get_request_type_display }}</td>
+                    </tr>
+                    <tr>
+                        <th>Standard</th>
+                        <td>{{ job.standard|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <th>EEL Level</th>
+                        <td>{{ job.eel_level|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Received</th>
+                        <td>{{ job.received_at|date:"d M Y H:i" }}</td>
+                    </tr>
+                                        <tr>
+                        <th>SLA Promised</th>
+                        <td>
+                            {{ job.promised_at|date:"d M Y H:i"|default:"—" }}
+
+                            {% if job.status != "LOCKED" and job.status != "RELEASED" and job.promised_at %}
+                                {% with days=job.promised_at|days_left %}
+                                    {% if days < 0 %}
+                                        <span class="badge bg-danger ms-2">
+                                            Overdue {{ days|abs_value }} day(s)
+                                        </span>
+                                    {% elif days == 0 %}
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            Due today
+                                        </span>
+                                    {% elif days <= 2 %}
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            {{ days }} day(s) left
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success ms-2">
+                                            {{ days }} day(s) left
+                                        </span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                Sample Details
+            </div>
+            <div class="card-body">
+                {% if job.sample %}
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <th style="width: 220px;">Sample Code</th>
+                            <td>{{ job.sample.sample_code }}</td>
+                        </tr>
+                        <tr>
+                            <th>Equipment</th>
+                            <td>{{ job.sample.get_equipment_type_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Rating</th>
+                            <td>{{ job.sample.rating_kva }} kVA</td>
+                        </tr>
+                        <tr>
+                            <th>Voltage Ratio</th>
+                            <td>{{ job.sample.hv_v }} / {{ job.sample.lv_v }} V</td>
+                        </tr>
+                        <tr>
+                            <th>Vector Group</th>
+                            <td>{{ job.sample.vector_group }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cooling</th>
+                            <td>{{ job.sample.cooling }}</td>
+                        </tr>
+                        <tr>
+                            <th>Serial No</th>
+                            <td>{{ job.sample.serial_no }}</td>
+                        </tr>
+                    </table>
+                {% else %}
+                    <div class="text-muted">
+                        No sample recorded.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        Workflow Actions
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+
+            {% if can_generate_report %}
+                <form method="post" action="{% url 'portal:generate_report' job.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-primary">
+                        📄 Generate Draft Report
+                    </button>
+                </form>
+            {% endif %}
+
+            {% for action in actions %}
+                <form method="post"
+                      action="{% url 'portal:transition' job.id action.action %}"
+                      class="d-flex gap-2 align-items-center">
+                    {% csrf_token %}
+
+                    {% if action.action == "reject" %}
+                        <input type="text"
+                               name="comment"
+                               class="form-control form-control-sm"
+                               style="width: 240px;"
+                               placeholder="Rejection reason">
+                    {% endif %}
+
+                    <button class="btn btn-sm {% if action.action == 'reject' %}btn-danger{% elif action.action == 'release' %}btn-success{% else %}btn-outline-primary{% endif %}">
+                        {{ action.label }}
+                    </button>
+                </form>
+            {% empty %}
+                <div class="text-muted">
+                    No workflow actions available for your role at this state.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Tests -->
+<div class="card shadow-sm mb-4 table-card">
+    <div class="card-header bg-white">
+        Tests
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Test</th>
+                    <th>Section</th>
+                    <th>Bay</th>
+                    <th>Started</th>
+                    <th>Completed</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for test in tests %}
+                    <tr>
+                        <td>{{ test.test_type.name }}</td>
+                        <td>{{ test.test_type.section_no|default:"—" }}</td>
+                        <td>{{ test.bay|default:"—" }}</td>
+                        <td>{{ test.started_at|date:"d M Y H:i"|default:"—" }}</td>
+                        <td>{{ test.completed_at|date:"d M Y H:i"|default:"—" }}</td>
+                                                <td>
+                            {% if request.user|has_group:"Engineer,Admin" and not job.is_locked %}
+                                <div class="d-flex gap-1">
+                                    <a href="{% url 'portal:test_enter' test.id %}"
+                                       class="btn btn-sm btn-primary">
+                                        Enter Data
+                                    </a>
+
+                                    {% if not test.completed_at %}
+                                        <form method="post" action="{% url 'portal:test_complete' test.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                                Complete
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="badge bg-success align-self-center">
+                                            Done
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-3">
+                            No tests created.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="card shadow-sm mb-4 table-card">
+    <div class="card-header bg-white">
+        Auto-Verdicts
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Parameter</th>
+                    <th>Measured</th>
+                    <th>Limit</th>
+                    <th>Verdict</th>
+                    <th>Standard / Clause</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        <td>{{ result.rule.parameter.label }}</td>
+                        <td>{{ result.measured|default:"—" }}</td>
+                        <td>{{ result.limit }}</td>
+                        <td>
+                            {% if result.verdict == "PASS" %}
+                                <span class="badge bg-success">PASS</span>
+                            {% elif result.verdict == "FAIL" %}
+                                <span class="badge bg-danger">FAIL</span>
+                            {% else %}
+                                <span class="badge bg-secondary">NA</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ result.rule.standard }}
+                            {% if result.rule.clause %}
+                                {{ result.rule.clause }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-3">
+                            No verdicts computed yet.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- BT/AT anomalies -->
+{% if anomalies %}
+    <div class="alert alert-warning">
+        <strong>⚠️ BT/AT Anomalies Detected</strong>
+
+        <ul class="mb-0 mt-2">
+            {% for anomaly in anomalies %}
+                <li>
+                    {{ anomaly.parameter.label }}:
+                    BT {{ anomaly.bt_value }} → AT {{ anomaly.at_value }}
+                    ({{ anomaly.drift_pct|floatformat:2 }}% drift)
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<!-- Report -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        Report
+    </div>
+
+    <div class="card-body">
+        {% if report %}
+            <table class="table table-sm">
+                <tr>
+                    <th style="width: 220px;">Version</th>
+                    <td>{{ report.version }}</td>
+                </tr>
+                <tr>
+                    <th>State</th>
+                    <td>{{ report.get_state_display }}</td>
+                </tr>
+                <tr>
+                    <th>Generated</th>
+                    <td>{{ report.generated_at|date:"d M Y H:i" }}</td>
+                </tr>
+                <tr>
+                    <th>SHA-256</th>
+                    <td class="text-break">
+                        <code>{{ report.sha256|default:"—" }}</code>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'portal:report_preview' job.id %}"
+                   target="_blank"
+                   class="btn btn-outline-secondary">
+                    Preview Report
+                </a>
+
+                {% if report.pdf %}
+                    <a href="{% url 'portal:report_download' report.id %}"
+                       class="btn btn-outline-primary">
+                        Download
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'portal:verify_report' report.id %}"
+                   class="btn btn-outline-dark">
+                    Verify Integrity
+                </a>
+            </div>
+        {% else %}
+            <div class="text-muted">
+                No report generated yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

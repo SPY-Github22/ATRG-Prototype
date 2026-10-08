@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.test_series_no }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'portal:customer_home' %}" class="text-decoration-none">
+        ← Back to Customer Home
+    </a>
+</div>
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h2 class="mb-1">{{ job.test_series_no }}</h2>
+        <div class="text-muted">
+            {{ job.customer.legal_name }}
+        </div>
+    </div>
+
+    <span class="badge bg-info text-dark">
+        {{ job.get_status_display }}
+    </span>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                Job Summary
+            </div>
+
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th style="width: 220px;">Request Type</th>
+                        <td>{{ job.get_request_type_display }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Standard</th>
+                        <td>{{ job.standard|default:"—" }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>EEL Level</th>
+                        <td>{{ job.eel_level|default:"—" }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Received</th>
+                        <td>{{ job.received_at|date:"d M Y" }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Expected</th>
+                        <td>{{ job.promised_at|date:"d M Y"|default:"—" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                Progress
+            </div>
+
+            <div class="card-body">
+                <div class="progress mb-3" style="height: 24px;">
+                    <div class="progress-bar bg-success"
+                         style="width: {{ progress.percent }}%;">
+                        {{ progress.completed }} / {{ progress.total }}
+                    </div>
+                </div>
+
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th style="width: 220px;">Total Tests</th>
+                        <td>{{ progress.total }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Completed</th>
+                        <td>{{ progress.completed }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>In Progress</th>
+                        <td>{{ progress.in_progress }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Current Test</th>
+                        <td>
+                            {% if progress.current_test %}
+                                {{ progress.current_test.test_type.name }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        Report
+    </div>
+
+    <div class="card-body">
+        {% if can_download %}
+            <div class="alert alert-success">
+                Your test report has been released.
+            </div>
+
+            <a href="{% url 'portal:report_download' report.id %}"
+               class="btn btn-primary">
+                ⬇ Download Released Report
+            </a>
+        {% else %}
+            <div class="text-muted">
+                The report will be available here after it has been released by the laboratory.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

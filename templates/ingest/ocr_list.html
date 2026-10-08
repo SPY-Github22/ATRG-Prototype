@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}OCR Queue{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">🖼 OCR Review Queue</h2>
+        <div class="text-muted">
+            Scanned logsheets requiring human confirmation.
+        </div>
+    </div>
+
+    <a href="{% url 'ingest:ocr_upload' %}" class="btn btn-primary">
+        🤖 Upload Scan
+    </a>
+</div>
+
+<div class="card shadow-sm table-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Created</th>
+                    <th>Job</th>
+                    <th>Test</th>
+                    <th>Status</th>
+                    <th>Confidence</th>
+                    <th>Uploaded By</th>
+                    <th>Reviewed By</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td>{{ item.created_at|date:"d M Y H:i" }}</td>
+
+                        <td>
+                            <a href="{% url 'portal:job_detail' item.job.id %}">
+                                {{ item.job.test_series_no }}
+                            </a>
+                        </td>
+
+                        <td>
+                            {% if item.test %}
+                                {{ item.test.test_type.name }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if item.status == "CONFIRMED" %}
+                                <span class="badge bg-success">CONFIRMED</span>
+                            {% elif item.status == "EXTRACTED" %}
+                                <span class="badge bg-warning text-dark">NEEDS REVIEW</span>
+                            {% elif item.status == "REJECTED" %}
+                                <span class="badge bg-danger">REJECTED</span>
+                            {% else %}
+                                <span class="badge bg-secondary">PENDING</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if item.confidence is not None %}
+                                {{ item.confidence|floatformat:2 }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <td>{{ item.uploaded_by.username|default:"—" }}</td>
+                        <td>{{ item.reviewed_by.username|default:"—" }}</td>
+
+                        <td>
+                            <a href="{% url 'ingest:ocr_review' item.id %}"
+                               class="btn btn-sm btn-outline-primary">
+                                Review
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No OCR items yet.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

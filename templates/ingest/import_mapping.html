@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Map Columns{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'ingest:import_start' %}" class="text-decoration-none">
+        ← Back to Import
+    </a>
+</div>
+
+<h2 class="mb-1">🧭 Column Mapping</h2>
+
+<div class="text-muted mb-4">
+    File: <strong>{{ batch.filename }}</strong><br>
+    Job: <strong>{{ batch.job.test_series_no }}</strong><br>
+    Test: <strong>{{ batch.test.test_type.name }}</strong>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                Step 2 — Map CSV Columns
+            </div>
+
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.parameter_code_column.label }}
+                        </label>
+
+                        {{ form.parameter_code_column }}
+
+                        {% if form.parameter_code_column.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.parameter_code_column.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.value_column.label }}
+                        </label>
+
+                        {{ form.value_column }}
+
+                        {% if form.value_column.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.value_column.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.stage_column.label }}
+                        </label>
+
+                        {{ form.stage_column }}
+
+                        <div class="form-text">
+                            Optional. If not mapped, the default stage will be used.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.tap_column.label }}
+                        </label>
+
+                        {{ form.tap_column }}
+
+                        <div class="form-text">
+                            Optional. Used for tap-wise measurements.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.phase_column.label }}
+                        </label>
+
+                        {{ form.phase_column }}
+
+                        <div class="form-text">
+                            Optional. Expected values: R, Y, B.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.default_stage.label }}
+                        </label>
+
+                        {{ form.default_stage }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        Run Dry-Run Validation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                Detected CSV Headers
+            </div>
+
+            <div class="card-body">
+                {% if batch.header_json %}
+                    <ul class="mb-0">
+                        {% for header in batch.header_json %}
+                            <li><code>{{ header }}</code></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-muted">
+                        No headers found.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

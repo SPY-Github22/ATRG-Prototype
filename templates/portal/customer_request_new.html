@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}New Test Request{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">📝 New Test Request</h2>
+<div class="text-muted mb-4">
+    Submitting as: <strong>{{ customer.legal_name }}</strong>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                Request Details
+            </div>
+
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                {{ form.request_type.label }}
+                            </label>
+
+                            {{ form.request_type }}
+
+                            {% if form.request_type.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.request_type.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                {{ form.equipment_type.label }}
+                            </label>
+
+                            {{ form.equipment_type }}
+
+                            {% if form.equipment_type.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.equipment_type.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                {{ form.standard.label }}
+                            </label>
+
+                            {{ form.standard }}
+
+                            {% if form.standard.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.standard.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                {{ form.eel_level.label }}
+                            </label>
+
+                            {{ form.eel_level }}
+
+                            {% if form.eel_level.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.eel_level.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                {{ form.rating_kva.label }}
+                            </label>
+
+                            {{ form.rating_kva }}
+
+                            {% if form.rating_kva.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.rating_kva.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                {{ form.hv_v.label }}
+                            </label>
+
+                            {{ form.hv_v }}
+
+                            {% if form.hv_v.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.hv_v.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                {{ form.lv_v.label }}
+                            </label>
+
+                            {{ form.lv_v }}
+
+                            {% if form.lv_v.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.lv_v.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                {{ form.frequency_hz.label }}
+                            </label>
+
+                            {{ form.frequency_hz }}
+
+                            {% if form.frequency_hz.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.frequency_hz.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                {{ form.vector_group.label }}
+                            </label>
+
+                            {{ form.vector_group }}
+
+                            {% if form.vector_group.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.vector_group.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                {{ form.serial_no.label }}
+                            </label>
+
+                            {{ form.serial_no }}
+
+                            {% if form.serial_no.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.serial_no.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.description.label }}
+                        </label>
+
+                        {{ form.description }}
+
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.description.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Submit Request
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="alert alert-info small">
+            <strong>What happens next?</strong>
+
+            <ul class="mb-0 mt-2">
+                <li>Your request is created with a provisional job number.</li>
+                <li>The laboratory assigns the official test series number.</li>
+                <li>You can track progress from this portal.</li>
+                <li>You will be notified when the report is released.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

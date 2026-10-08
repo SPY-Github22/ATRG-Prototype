@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Trail{% endblock %}
+
+{% block content %}
+<h2 class="mb-3">🕵️ Audit Trail</h2>
+
+<form method="get" class="mb-3">
+    <div class="input-group" style="max-width: 420px;">
+        <input type="text"
+               name="entity"
+               value="{{ entity }}"
+               class="form-control"
+               placeholder="Filter by entity, e.g. Measurement, Job, Report">
+
+        <button class="btn btn-outline-secondary">
+            Filter
+        </button>
+    </div>
+</form>
+
+<div class="card shadow-sm table-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Time</th>
+                    <th>Actor</th>
+                    <th>Entity</th>
+                    <th>Entity ID</th>
+                    <th>Action</th>
+                    <th>Field</th>
+                    <th>Old Value</th>
+                    <th>New Value</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>{{ log.at|date:"d M Y H:i:s" }}</td>
+                        <td>{{ log.actor.username|default:"—" }}</td>
+                        <td>{{ log.entity }}</td>
+                        <td>{{ log.entity_id }}</td>
+                        <td>{{ log.get_action_display }}</td>
+                        <td>{{ log.field|default:"—" }}</td>
+                        <td>{{ log.old_value|default:"—" }}</td>
+                        <td>{{ log.new_value|default:"—" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No audit entries.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

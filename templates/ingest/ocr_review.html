@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}OCR Review{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'ingest:ocr_list' %}" class="text-decoration-none">
+        ← Back to OCR Queue
+    </a>
+</div>
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h2 class="mb-1">🔎 OCR Review</h2>
+        <div class="text-muted">
+            Job: <strong>{{ item.job.test_series_no }}</strong><br>
+            Test: <strong>{{ item.test.test_type.name|default:"—" }}</strong>
+        </div>
+    </div>
+
+    <div class="text-end">
+        {% if item.status == "CONFIRMED" %}
+            <span class="badge bg-success">CONFIRMED</span>
+        {% elif item.status == "EXTRACTED" %}
+            <span class="badge bg-warning text-dark">NEEDS REVIEW</span>
+        {% elif item.status == "REJECTED" %}
+            <span class="badge bg-danger">REJECTED</span>
+        {% else %}
+            <span class="badge bg-secondary">PENDING</span>
+        {% endif %}
+
+        <div class="small text-muted mt-1">
+            OCR confidence:
+            {% if item.confidence is not None %}
+                {{ item.confidence|floatformat:2 }}
+            {% else %}
+                —
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if item.error_log %}
+    <div class="alert alert-warning">
+        {{ item.error_log }}
+    </div>
+{% endif %}
+
+{% if item.job.is_locked %}
+    <div class="alert alert-danger">
+        Job is locked. OCR-assisted measurements cannot be saved.
+    </div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                Scan Image
+            </div>
+
+            <div class="card-body text-center">
+                {% if item.image %}
+                    <img src="{{ item.image.url }}"
+                         alt="OCR scan"
+                         class="img-fluid border rounded"
+                         style="max-height: 480px;">
+                {% else %}
+                    <div class="text-muted">
+                        No image available.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                Extracted Text
+            </div>
+
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <textarea name="extracted_text"
+                              rows="14"
+                              class="form-control font-monospace">{{ item.extracted_text }}</textarea>
+
+                    <div class="d-flex gap-2 mt-3 flex-wrap">
+                        <button type="submit" name="reparse" class="btn btn-primary">
+                            Re-parse Text
+                        </button>
+
+                        <button type="submit" name="run_ocr" class="btn btn-outline-secondary">
+                            Run OCR Again
+                        </button>
+
+                        <button type="submit"
+                                name="reject"
+                                class="btn btn-outline-danger"
+                                onclick="return confirm('Reject this OCR item?');">
+                            Reject OCR Item
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4 class="mb-3">Proposed Measurements</h4>
+
+{% if item.proposal_json %}
+    {% for row in item.proposal_json %}
+        {% with idx=forloop.counter0 %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Row {{ idx|add:"1" }}</strong>
+
+                    {% if row.confirmed %}
+                        <span class="badge bg-success ms-2">Confirmed</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark ms-2">Needs Confirmation</span>
+                    {% endif %}
+                </div>
+
+                <div class="small text-muted">
+                    {% if row.confidence is not None %}
+                        Confidence: {{ row.confidence|floatformat:2 }}
+                    {% else %}
+                        Confidence: —
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <input type="hidden"
+                           name="row_{{ idx }}_raw_text"
+                           value="{{ row.raw_text }}">
+
+                    <div class="mb-2 small text-muted">
+                        <strong>OCR line:</strong>
+                        <code>{{ row.raw_text }}</code>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label small">Parameter</label>
+
+                            <select name="row_{{ idx }}_parameter" class="form-select">
+                                {% for parameter in parameters %}
+                                    <option value="{{ parameter.id }}"
+                                            {% if parameter.id == row.parameter_id %}selected{% endif %}>
+                                        {{ parameter.code }} — {{ parameter.label }}
+                                        {% if parameter.unit %}
+                                            ({{ parameter.unit }})
+                                        {% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label small">Value</label>
+
+                            <input type="number"
+                                   step="0.0001"
+                                   name="row_{{ idx }}_value"
+                                   value="{{ row.value|default_if_none:'' }}"
+                                   class="form-control">
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label small">Stage</label>
+
+                            <select name="row_{{ idx }}_stage" class="form-select">
+                                <option value="BT" {% if row.stage == "BT" %}selected{% endif %}>BT</option>
+                                <option value="AT" {% if row.stage == "AT" %}selected{% endif %}>AT</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-1 mb-2">
+                            <label class="form-label small">Tap</label>
+
+                            <input type="number"
+                                   name="row_{{ idx }}_tap"
+                                   value="{{ row.tap_position|default_if_none:'' }}"
+                                   class="form-control">
+                        </div>
+
+                        <div class="col-md-1 mb-2">
+                            <label class="form-label small">Phase</label>
+
+                            <select name="row_{{ idx }}_phase" class="form-select">
+                                <option value="">—</option>
+                                <option value="R" {% if row.phase == "R" %}selected{% endif %}>R</option>
+                                <option value="Y" {% if row.phase == "Y" %}selected{% endif %}>Y</option>
+                                <option value="B" {% if row.phase == "B" %}selected{% endif %}>B</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label small">Confidence</label>
+
+                            <input type="number"
+                                   step="0.01"
+                                   min="0"
+                                   max="1"
+                                   name="row_{{ idx }}_confidence"
+                                   value="{{ row.confidence|default_if_none:'' }}"
+                                   class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="mt-2">
+                        <button type="submit"
+                                name="save_row"
+                                value="{{ idx }}"
+                                class="btn btn-primary">
+                            Confirm and Save as Measurement
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endwith %}
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">
+        No proposed rows found.
+
+        <br><br>
+
+        If OCR could not read the scan, paste text like this into the extracted-text box
+        and click <strong>Re-parse Text</strong>:
+
+        <pre class="mb-0 mt-3">No-load loss 908 W
+No-load current 1.689 A
+Total loss 100% 2486 W
+HV resistance 0.112 ohm
+LV resistance 0.0045 ohm</pre>
+    </div>
+{% endif %}
+{% endblock %}

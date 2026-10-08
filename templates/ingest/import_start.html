@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Import CSV{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">📥 Import CSV</h2>
+<div class="text-muted mb-4">
+    Upload a laboratory log sheet export or spreadsheet in CSV format.
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                Step 1 — Upload File
+            </div>
+
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.test.label }}
+                        </label>
+
+                        {{ form.test }}
+
+                        {% if form.test.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.test.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.file.label }}
+                        </label>
+
+                        {{ form.file }}
+
+                        {% if form.file.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.file.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        Continue to Column Mapping
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-3 small">
+            <strong>Recommended CSV format:</strong>
+
+            <pre class="mb-0 mt-2">parameter_code,stage,tap_position,phase,value
+NLL_W,BT,,,908
+I_NL_A,BT,,,1.689
+RATIO_ERR_PCT,BT,1,R,0.02</pre>
+        </div>
+    </div>
+</div>
+{% endblock %}

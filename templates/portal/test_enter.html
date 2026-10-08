@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Enter {{ test.test_type.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'portal:job_detail' job.id %}" class="text-decoration-none">
+        ← Back to {{ job.test_series_no }}
+    </a>
+</div>
+
+<h2 class="mb-1">
+    Enter {{ test.test_type.name }}
+</h2>
+
+<div class="text-muted mb-4">
+    {{ job.test_series_no }} | Bay: {{ test.bay|default:"—" }}
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+
+        <!-- Generic measurement form -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                Add Measurement
+            </div>
+
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {{ measurement_form.non_field_errors }}
+
+                    <div class="mb-3">
+                        <label class="form-label">Parameter</label>
+                        {{ measurement_form.parameter }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Stage</label>
+                        {{ measurement_form.stage }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tap Position</label>
+                        {{ measurement_form.tap_position }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phase</label>
+                        {{ measurement_form.phase }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Value</label>
+                        {{ measurement_form.value }}
+                    </div>
+
+                    <button type="submit"
+                            name="save_measurement"
+                            class="btn btn-primary w-100">
+                        Save Measurement
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Ratio grid -->
+        {% if is_routine and ratio_form %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    Voltage Ratio Error Grid (%)
+                </div>
+
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {{ ratio_form.non_field_errors }}
+
+                        <div class="mb-3" style="max-width: 180px;">
+                            <label class="form-label">BT/AT</label>
+                            {{ ratio_form.stage }}
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Tap</th>
+                                        <th>R</th>
+                                        <th>Y</th>
+                                        <th>B</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {% for row in ratio_fields %}
+                                        <tr>
+                                            <td><strong>{{ row.tap }}</strong></td>
+                                            {% for cell in row.cells %}
+                                                <td>{{ cell }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button type="submit"
+                                name="save_ratio_grid"
+                                class="btn btn-primary w-100">
+                            Save Ratio Grid
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+{% if is_sc and sc_form %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            Short Circuit Shot Entry
+        </div>
+
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                {{ sc_form.non_field_errors }}
+
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label small">
+                            {{ sc_form.shot_no.label }}
+                        </label>
+                        {{ sc_form.shot_no }}
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label small">
+                            {{ sc_form.phase.label }}
+                        </label>
+                        {{ sc_form.phase }}
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label small">
+                            {{ sc_form.stage.label }}
+                        </label>
+                        {{ sc_form.stage }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ sc_form.applied_kv.label }}
+                        </label>
+                        {{ sc_form.applied_kv }}
+                    </div>
+
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ sc_form.peak_current_ka.label }}
+                        </label>
+                        {{ sc_form.peak_current_ka }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ sc_form.rms_current_ka.label }}
+                        </label>
+                        {{ sc_form.rms_current_ka }}
+                    </div>
+
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ sc_form.duration_s.label }}
+                        </label>
+                        {{ sc_form.duration_s }}
+                    </div>
+                </div>
+
+                <button type="submit"
+                        name="save_sc_shot"
+                        class="btn btn-primary w-100">
+                    Save SC Shot
+                </button>
+            </form>
+        </div>
+    </div>
+{% endif %}
+
+{% if is_temp and temp_form %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            Temperature Rise Entry
+        </div>
+
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                {{ temp_form.non_field_errors }}
+
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ temp_form.hour.label }}
+                        </label>
+                        {{ temp_form.hour }}
+                    </div>
+
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ temp_form.stage.label }}
+                        </label>
+                        {{ temp_form.stage }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ temp_form.top_oil_c.label }}
+                        </label>
+                        {{ temp_form.top_oil_c }}
+                    </div>
+
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ temp_form.ambient_c.label }}
+                        </label>
+                        {{ temp_form.ambient_c }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ temp_form.hv_rise_c.label }}
+                        </label>
+                        {{ temp_form.hv_rise_c }}
+                    </div>
+
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label small">
+                            {{ temp_form.lv_rise_c.label }}
+                        </label>
+                        {{ temp_form.lv_rise_c }}
+                    </div>
+                </div>
+
+                <button type="submit"
+                        name="save_temp_quick"
+                        class="btn btn-primary w-100">
+                    Save Temperature Rise Values
+                </button>
+            </form>
+        </div>
+    </div>
+{% endif %}
+
+{% if is_oil and oil_form %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            Oil / Pressure Test Entry
+        </div>
+
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                {{ oil_form.non_field_errors }}
+
+                <div class="mb-2">
+                    <label class="form-label small">
+                        {{ oil_form.stage.label }}
+                    </label>
+                    {{ oil_form.stage }}
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small">
+                        {{ oil_form.pressure_kpa.label }}
+                    </label>
+                    {{ oil_form.pressure_kpa }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small">
+                        {{ oil_form.leakage.label }}
+                    </label>
+                    {{ oil_form.leakage }}
+                </div>
+
+                <button type="submit"
+                        name="save_oil_quick"
+                        class="btn btn-primary w-100">
+                    Save Oil / Pressure Values
+                </button>
+            </form>
+        </div>
+    </div>
+{% endif %}
+
+    <div class="col-md-7">
+        <div class="card shadow-sm table-card">
+            <div class="card-header bg-white">
+                Existing Measurements
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Stage</th>
+                            <th>Tap</th>
+                            <th>Phase</th>
+                            <th>Value</th>
+                            <th>Unit</th>
+                            <th>Source</th>
+                            <th>Entered By</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for measurement in measurements %}
+                            <tr>
+                                <td>{{ measurement.parameter.label }}</td>
+                                <td>{{ measurement.get_stage_display }}</td>
+                                <td>{{ measurement.tap_position|default:"—" }}</td>
+                                <td>{{ measurement.phase|default:"—" }}</td>
+                                <td>{{ measurement.value|default:"—" }}</td>
+                                <td>{{ measurement.unit }}</td>
+                                <td>{{ measurement.get_source_display }}</td>
+                                <td>{{ measurement.captured_by.username|default:"—" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    No measurements entered yet.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

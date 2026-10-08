@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Import Preview{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'ingest:import_mapping' batch.id %}" class="text-decoration-none">
+        ← Back to Mapping
+    </a>
+</div>
+
+<h2 class="mb-1">🔍 Import Dry-Run Preview</h2>
+
+<div class="text-muted mb-4">
+    File: <strong>{{ batch.filename }}</strong><br>
+    Job: <strong>{{ batch.job.test_series_no }}</strong><br>
+    Test: <strong>{{ batch.test.test_type.name }}</strong>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="h4 mb-0">{{ summary.total_rows }}</div>
+                <div class="text-muted small">Total Rows</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm border-success">
+            <div class="card-body">
+                <div class="h4 mb-0 text-success">{{ summary.valid_rows }}</div>
+                <div class="text-muted small">Valid Rows</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm border-warning">
+            <div class="card-body">
+                <div class="h4 mb-0 text-warning">{{ summary.warning_rows }}</div>
+                <div class="text-muted small">Warnings</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm border-danger">
+            <div class="card-body">
+                <div class="h4 mb-0 text-danger">{{ summary.error_rows }}</div>
+                <div class="text-muted small">Errors</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if batch.job.is_locked %}
+    <div class="alert alert-danger">
+        Job is locked. Import is not allowed.
+    </div>
+{% elif summary.error_rows > 0 %}
+    <div class="alert alert-danger">
+        Fix all errors before committing the import.
+    </div>
+{% elif summary.valid_rows == 0 %}
+    <div class="alert alert-warning">
+        No valid rows found. Please check the file and mapping.
+    </div>
+{% endif %}
+
+{% if can_commit %}
+    <form method="post" action="{% url 'ingest:import_commit' batch.id %}" class="mb-4">
+        {% csrf_token %}
+
+        <button type="submit" class="btn btn-success">
+            ✅ Commit {{ summary.valid_rows }} Valid Row(s)
+        </button>
+    </form>
+{% endif %}
+
+<div class="card shadow-sm table-card">
+    <div class="card-header bg-white">
+        Preview Rows
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Line</th>
+                    <th>Parameter</th>
+                    <th>Value</th>
+                    <th>Stage</th>
+                    <th>Tap</th>
+                    <th>Phase</th>
+                    <th>Status</th>
+                    <th>Messages</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>{{ row.line }}</td>
+                        <td>{{ row.parameter_code|default:"—" }}</td>
+                        <td>{{ row.value|default:"—" }}</td>
+                        <td>{{ row.stage }}</td>
+                        <td>{{ row.tap_position|default:"—" }}</td>
+                        <td>{{ row.phase|default:"—" }}</td>
+
+                        <td>
+                            {% if row.status == "ok" %}
+                                <span class="badge bg-success">OK</span>
+                            {% elif row.status == "warning" %}
+                                <span class="badge bg-warning text-dark">WARNING</span>
+                            {% else %}
+                                <span class="badge bg-danger">ERROR</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="small">
+                            {{ row.messages|join:"<br>"|safe }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No rows found.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

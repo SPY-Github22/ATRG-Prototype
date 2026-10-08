@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% load core_extras %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-0">📊 Dashboard</h2>
+        <div class="text-muted">
+            Automated Test Report Generation — CPRI SCL
+        </div>
+    </div>
+
+    <div>
+        {% if status_filter or request_type_filter or overdue_filter %}
+            <a href="{% url 'portal:dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                Clear Filters
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- My Tasks -->
+{% if tasks %}
+<div class="row mb-4">
+    {% for task in tasks %}
+        <div class="col-md-3 mb-2">
+            <a href="{{ task.url }}" class="text-decoration-none">
+                <div class="card shadow-sm border-{{ task.color }}">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="h5 mb-0 text-{{ task.color }}">
+                                    {{ task.count }}
+                                </div>
+                                <div class="small text-muted">
+                                    {{ task.label }}
+                                </div>
+                            </div>
+                            <div class="fs-4">
+                                {% if task.color == "danger" %}
+                                    ⏰
+                                {% elif task.color == "warning" %}
+                                    🧐
+                                {% elif task.color == "dark" %}
+                                    ✍️
+                                {% else %}
+                                    🛠️
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Status summary -->
+<div class="row mb-4">
+    {% for status, count in status_counts.items %}
+        <div class="col-6 col-xl-2 mb-2">
+            <a href="{% if status_filter == status %}?{% else %}?status={{ status }}{% endif %}"
+               class="text-decoration-none">
+                <div class="card text-center shadow-sm h-100 {% if status_filter == status %}border-primary{% endif %}">
+                    <div class="card-body py-2">
+                        <div class="h5 mb-0">{{ count }}</div>
+                        <div class="small text-muted">{{ status }}</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Search/filter bar -->
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-4">
+                <input type="text"
+                       name="q"
+                       value="{{ q }}"
+                       class="form-control"
+                       placeholder="Search series no / sample code / customer">
+            </div>
+
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All statuses</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}"
+                                {% if status_filter == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <select name="request_type" class="form-select">
+                    <option value="">All request types</option>
+                    {% for value, label in request_type_choices %}
+                        <option value="{{ value }}"
+                                {% if request_type_filter == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary">
+                    Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if overdue_filter == "1" %}
+    <div class="alert alert-danger">
+        Showing overdue jobs only.
+    </div>
+{% endif %}
+
+<!-- Jobs table -->
+<div class="card shadow-sm table-card">
+    <div class="card-header bg-white">
+        <strong>Test Jobs</strong>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Test Series No</th>
+                    <th>Customer</th>
+                    <th>Sample Code</th>
+                    <th>Type</th>
+                    <th>Standard</th>
+                    <th>Status</th>
+                    <th>Received</th>
+                    <th>SLA</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for job in jobs %}
+                    <tr class="{% if job|is_overdue %}table-danger{% endif %}">
+                        <td>
+                            <a href="{% url 'portal:job_detail' job.id %}">
+                                <strong>{{ job.test_series_no }}</strong>
+                            </a>
+                        </td>
+
+                        <td>{{ job.customer.legal_name }}</td>
+
+                        <td>
+                            {% if job.sample %}
+                                {{ job.sample.sample_code }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <td>{{ job.get_request_type_display }}</td>
+                        <td>{{ job.standard|default:"—" }}</td>
+
+                        <td>
+                            <span class="badge bg-{{ job.status|status_badge_class }} status-badge">
+                                {{ job.get_status_display }}
+                            </span>
+                        </td>
+
+                        <td>{{ job.received_at|date:"d M Y" }}</td>
+
+                        <td>
+                            {% if job.status == "LOCKED" or job.status == "RELEASED" %}
+                                <span class="badge bg-secondary">Closed</span>
+                            {% elif job.promised_at %}
+                                {% with days=job.promised_at|days_left %}
+                                    {% if days < 0 %}
+                                        <span class="badge bg-danger">
+                                            Overdue {{ days|abs_value }} day(s)
+                                        </span>
+                                    {% elif days == 0 %}
+                                        <span class="badge bg-warning text-dark">
+                                            Due today
+                                        </span>
+                                    {% elif days <= 2 %}
+                                        <span class="badge bg-warning text-dark">
+                                            {{ days }} day(s) left
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            {{ days }} day(s) left
+                                        </span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No jobs found.
+
+                            {% if q or status_filter or request_type_filter or overdue_filter %}
+                                <br><br>
+                                <a href="{% url 'portal:dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                                    Clear filters
+                                </a>
+                            {% else %}
+                                <br><br>
+                                Run:
+                                <code>python manage.py seed</code>
+                                to load sample job 25T1654.
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

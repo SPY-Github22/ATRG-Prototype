@@ -1,0 +1,12 @@
+Routine Test Log Sheet
+Test Series No: CPRIBLRSCL25T1654
+Sample Code: HVD25S0847
+
+No-load loss 908 W
+No-load current 1.689 A
+Total loss 100% 2486 W
+HV resistance 0.112 ohm
+LV resistance 0.0045 ohm
+Top oil temperature 26.1 C
+HV winding rise 39.7 C
+LV winding rise 34.3 C

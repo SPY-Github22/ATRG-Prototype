@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Home{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">🏠 Customer Portal</h2>
+        <div class="text-muted">
+            {{ customer.legal_name }}
+        </div>
+    </div>
+
+    <a href="{% url 'portal:customer_request_new' %}" class="btn btn-primary">
+        📝 New Test Request
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm table-card">
+            <div class="card-header bg-white">
+                My Jobs
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Job</th>
+                            <th>Sample</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Received</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in jobs_data %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'portal:customer_job_detail' item.job.id %}">
+                                        <strong>{{ item.job.test_series_no }}</strong>
+                                    </a>
+                                </td>
+
+                                <td>
+                                    {% if item.job.sample %}
+                                        {{ item.job.sample.sample_code }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-info text-dark">
+                                        {{ item.job.get_status_display }}
+                                    </span>
+                                </td>
+
+                                <td style="min-width: 220px;">
+                                    <div class="progress" style="height: 18px;">
+                                        <div class="progress-bar bg-success"
+                                             style="width: {{ item.progress.percent }}%;">
+                                            {{ item.progress.completed }}/{{ item.progress.total }}
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>{{ item.job.received_at|date:"d M Y" }}</td>
+
+                                <td>
+                                    <a href="{% url 'portal:customer_job_detail' item.job.id %}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No jobs found. Submit a new test request.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span>Recent Notifications</span>
+                <a href="{% url 'portal:customer_notifications' %}" class="small">
+                    View all
+                </a>
+            </div>
+
+            <div class="list-group list-group-flush">
+                {% for notification in notifications %}
+                    <div class="list-group-item">
+                        <div class="small text-muted">
+                            {{ notification.created_at|date:"d M Y H:i" }}
+                        </div>
+
+                        <div>
+                            {{ notification.message }}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="list-group-item text-muted">
+                        No notifications yet.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

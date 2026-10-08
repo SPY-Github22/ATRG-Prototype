@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .header h1 { font-size: 16pt; margin: 0; }
+        .header h2 { font-size: 14pt; margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #333; padding: 4px 8px; font-size: 10pt; }
+        th { background-color: #eee; }
+        .verdict-pass { color: green; font-weight: bold; }
+        .verdict-fail { color: red; font-weight: bold; }
+        .footer { margin-top: 20px; font-size: 9pt; color: #555; }
+        .section-title { font-size: 13pt; font-weight: bold; margin-top: 20px; border-bottom: 1px solid #000; }
+    </style>
+</head>
+<body>
+    <!-- Section 1: Cover -->
+    <div class="header">
+        <h1>CENTRAL POWER RESEARCH INSTITUTE</h1>
+        <h2>Short Circuit Laboratory, Bengaluru</h2>
+        <h3>TEST CERTIFICATE</h3>
+    </div>
+
+    <table>
+        <tr><td><strong>Report No:</strong></td><td>{{ report_no }}</td></tr>
+        <tr><td><strong>Test Series No:</strong></td><td>{{ job.test_series_no }}</td></tr>
+        <tr><td><strong>Sample Code:</strong></td><td>{{ sample.sample_code|default:"—" }}</td></tr>
+        <tr><td><strong>Date of Issue:</strong></td><td>{{ generated_at|date:"d/m/Y" }}</td></tr>
+    </table>
+
+    <!-- Section 2: Customer -->
+    <div class="section-title">2. Customer & Manufacturer</div>
+    <table>
+        <tr><td><strong>Customer:</strong></td><td>{{ customer.legal_name }}</td></tr>
+        <tr><td><strong>Address:</strong></td><td>{{ customer.address }}</td></tr>
+        <tr><td><strong>Contact:</strong></td><td>{{ customer.contact_person }}</td></tr>
+    </table>
+
+    <!-- Section 3: Sample Particulars -->
+    <div class="section-title">3. Sample Particulars</div>
+    {% if sample %}
+    <table>
+        <tr><td>Equipment Type</td><td>{{ sample.get_equipment_type_display }}</td></tr>
+        <tr><td>Rating</td><td>{{ sample.rating_kva }} kVA</td></tr>
+        <tr><td>Voltage Ratio</td><td>{{ sample.hv_v }} / {{ sample.lv_v }} V</td></tr>
+        <tr><td>Vector Group</td><td>{{ sample.vector_group }}</td></tr>
+        <tr><td>Frequency</td><td>{{ sample.frequency_hz }} Hz</td></tr>
+        <tr><td>Cooling</td><td>{{ sample.cooling }}</td></tr>
+        <tr><td>Serial No</td><td>{{ sample.serial_no }}</td></tr>
+    </table>
+    {% endif %}
+
+    <!-- Section 5: List of Tests -->
+    <div class="section-title">5. Tests Performed</div>
+    <table>
+        <thead>
+            <tr><th>Test</th><th>Section</th><th>Bay</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+            {% for test in tests %}
+            <tr>
+                <td>{{ test.test_type.name }}</td>
+                <td>{{ test.test_type.section_no }}</td>
+                <td>{{ test.bay }}</td>
+                <td>{{ test.started_at|date:"d/m/Y"|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Section 6: Results vs Limits -->
+    <div class="section-title">6. Results & Conformity</div>
+    <table>
+        <thead>
+            <tr><th>Parameter</th><th>Measured</th><th>Limit</th><th>Verdict</th><th>Standard Clause</th></tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td>{{ r.rule.parameter.label }}</td>
+                <td>{{ r.measured|default:"—" }}</td>
+                <td>{{ r.limit }}</td>
+                <td class="verdict-{{ r.verdict|lower }}">{{ r.verdict }}</td>
+                <td>{{ r.rule.standard }} {{ r.rule.clause }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Section 8: Integrity Footer -->
+    <div class="footer">
+        <p>SHA-256: {{ job.reports.first.sha256|default:"Pending generation" }}</p>
+        <p>Generated: {{ generated_at|date:"d/m/Y H:i" }} | Version: {{ job.reports.first.version|default:"1" }}</p>
+        <p><em>This is a system-generated document. Integrity can be verified via the ATRG portal.</em></p>
+    </div>
+</body>
+</html>
